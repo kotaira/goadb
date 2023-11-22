@@ -3,9 +3,9 @@ package adb
 import (
 	"testing"
 
+	"github.com/kotaira/goadb/internal/errors"
+	"github.com/kotaira/goadb/wire"
 	"github.com/stretchr/testify/assert"
-	"github.com/zach-klippenstein/goadb/internal/errors"
-	"github.com/zach-klippenstein/goadb/wire"
 )
 
 func TestGetAttribute(t *testing.T) {
@@ -24,11 +24,11 @@ func TestGetAttribute(t *testing.T) {
 func TestGetDeviceInfo(t *testing.T) {
 	deviceLister := func() ([]*DeviceInfo, error) {
 		return []*DeviceInfo{
-			&DeviceInfo{
+			{
 				Serial:  "abc",
 				Product: "Foo",
 			},
-			&DeviceInfo{
+			{
 				Serial:  "def",
 				Product: "Bar",
 			},

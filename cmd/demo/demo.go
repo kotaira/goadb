@@ -4,12 +4,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"time"
 
-	adb "github.com/zach-klippenstein/goadb"
-	"github.com/zach-klippenstein/goadb/internal/errors"
+	adb "github.com/kotaira/goadb"
+	"github.com/kotaira/goadb/internal/errors"
 )
 
 var (
@@ -149,7 +149,7 @@ func PrintDeviceInfo(device *adb.Device) error {
 	if err != nil {
 		fmt.Println("\terror opening file:", err)
 	} else {
-		loadAvg, err := ioutil.ReadAll(loadavgReader)
+		loadAvg, err := io.ReadAll(loadavgReader)
 		if err != nil {
 			fmt.Println("\terror reading file:", err)
 		} else {

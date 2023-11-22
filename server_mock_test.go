@@ -4,8 +4,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/zach-klippenstein/goadb/internal/errors"
-	"github.com/zach-klippenstein/goadb/wire"
+	"github.com/kotaira/goadb/internal/errors"
+	"github.com/kotaira/goadb/wire"
 )
 
 // MockServer implements Server, Scanner, and Sender.
@@ -75,6 +75,10 @@ func (s *MockServer) ReadUntilEof() ([]byte, error) {
 		data = append(data, s.Messages[s.nextMsgIndex])
 	}
 	return []byte(strings.Join(data, "")), nil
+}
+
+func (s *MockServer) GetReader() io.Reader {
+	return nil
 }
 
 func (s *MockServer) SendMessage(msg []byte) error {
