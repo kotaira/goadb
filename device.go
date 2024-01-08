@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -154,17 +155,86 @@ func (c *Device) RunCommandWithShell(cmd string, args ...string) (*wire.Conn, er
 	return conn, wrapClientError(err, c, "RunCommand")
 }
 
-/*
-Remount, from the official adb command’s docs:
+func (c *Device) CreateDeviceConnection() (*wire.Conn, error) {
+	return c.dialDevice()
+}
 
-	Ask adbd to remount the device's filesystem in read-write mode,
-	instead of read-only. This is usually necessary before performing
-	an "adb sync" or "adb push" request.
-	This request may not succeed on certain builds which do not allow
-	that.
+func (c *Device) DialLocalAbstractSocket(socketName string) (*wire.Conn, error) {
+	conn, err := c.dialDevice()
+	if err != nil {
+		return nil, wrapClientError(err, c, "DialSocket")
+	}
+	req := fmt.Sprintf("localabstract:%s", socketName)
+	if err = conn.SendMessage([]byte(req)); err != nil {
+		return nil, wrapClientError(err, c, "DialSocket")
+	}
+	if _, err = conn.ReadStatus(req); err != nil {
+		return nil, wrapClientError(err, c, "DialSocket")
+	}
 
-Source: https://android.googlesource.com/platform/system/core/+/master/adb/SERVICES.TXT
-*/
+	return conn, nil
+}
+
+func (c *Device) PushFile(localPath, remotePath string) error {
+	file, err := os.ReadFile(localPath)
+	if err != nil {
+		return err
+	}
+	writer, err := c.OpenWrite(remotePath, os.ModePerm, time.Now())
+	if err != nil {
+		return wrapClientError(err, c, "Push")
+	}
+	defer writer.Close()
+
+	_, err = writer.Write(file)
+	return wrapClientError(err, c, "Push")
+
+}
+
+func (c *Device) PullFile(remotePath, localPath string) error {
+	reader, err := c.OpenRead(remotePath)
+	if err != nil {
+		return wrapClientError(err, c, "Pull")
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	localDir := filepath.Dir(localPath)
+	if _, err := os.Stat(localDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(localDir, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	localInfo, err := os.Stat(localPath)
+	if err == nil && localInfo.IsDir() {
+		localPath = filepath.Join(localPath, filepath.Base(remotePath))
+	}
+
+	file, err := os.Create(localPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	_, err = io.Copy(file, reader)
+	return err
+
+}
+
+//Remount, from the official adb command’s docs:
+
+//	Ask adbd to remount the device's filesystem in read-write mode,
+//	instead of read-only. This is usually necessary before performing
+//	an "adb sync" or "adb push" request.
+//	This request may not succeed on certain builds which do not allow
+//	that.
+
+//Source: https://android.googlesource.com/platform/system/core/+/master/adb/SERVICES.TXT
+
 func (c *Device) Remount() (string, error) {
 	conn, err := c.dialDevice()
 	if err != nil {
