@@ -13,6 +13,8 @@ type Sender interface {
 
 	NewSyncSender() SyncSender
 
+	GetWriter() io.Writer
+
 	Close() error
 }
 
@@ -39,6 +41,10 @@ func (s *realSender) SendMessage(msg []byte) error {
 
 func (s *realSender) NewSyncSender() SyncSender {
 	return NewSyncSender(s.writer)
+}
+
+func (s *realSender) GetWriter() io.Writer {
+	return s.writer
 }
 
 func (s *realSender) Close() error {
