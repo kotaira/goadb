@@ -3,6 +3,7 @@ package adb
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -112,7 +113,6 @@ func (c *Device) RunCommand(cmd string, args ...string) (string, error) {
 		return "", wrapClientError(err, c, "RunCommand")
 	}
 	defer conn.Close()
-
 	req := fmt.Sprintf("shell:%s", cmd)
 
 	// Shell responses are special, they don't include a length header.
@@ -177,22 +177,26 @@ func (c *Device) DialLocalAbstractSocket(socketName string) (*wire.Conn, error) 
 
 func (c *Device) PushFile(localPath, remotePath string) error {
 	file, err := os.ReadFile(localPath)
+
 	if err != nil {
 		return err
 	}
-	writer, err := c.OpenWrite(remotePath, os.ModePerm, time.Now())
+
+	writer, err := c.OpenWrite(filepath.ToSlash(filepath.Join(remotePath, filepath.Base(localPath))), os.ModePerm, time.Now())
+
 	if err != nil {
 		return wrapClientError(err, c, "Push")
 	}
+
 	defer writer.Close()
 
 	_, err = writer.Write(file)
+	time.Sleep(1 * time.Second)
 	return wrapClientError(err, c, "Push")
-
 }
 
 func (c *Device) PullFile(remotePath, localPath string) error {
-	reader, err := c.OpenRead(remotePath)
+	reader, err := c.OpenRead(filepath.ToSlash(remotePath))
 	if err != nil {
 		return wrapClientError(err, c, "Pull")
 	}
@@ -223,6 +227,35 @@ func (c *Device) PullFile(remotePath, localPath string) error {
 	_, err = io.Copy(file, reader)
 	return err
 
+}
+
+func (c *Device) Install(filePath string, args ...string) error {
+	tmpPath := "/data/local/tmp/"
+	if err := c.PushFile(filePath, tmpPath); err != nil {
+		return err
+	}
+	fileName := filepath.Base(filePath)
+	apkPath := filepath.ToSlash(filepath.Join(tmpPath, fileName))
+	args = append(append([]string{"install"}, args...), apkPath)
+
+	res, err := c.RunCommand("pm", args...)
+
+	if err != nil {
+		return err
+	}
+	slog.Info(fmt.Sprintf("[adb_install]install apk:%s", fileName), "res", res)
+	return nil
+
+}
+
+func (c *Device) Uninstall(packageName string) error {
+	res, err := c.RunCommand("pm", "uninstall", packageName)
+
+	if err != nil {
+		return err
+	}
+	slog.Info(fmt.Sprintf("[adb_uninstall]uninstall package:%s", packageName), "res", res)
+	return nil
 }
 
 //Remount, from the official adb command’s docs:
