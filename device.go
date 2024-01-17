@@ -175,6 +175,22 @@ func (c *Device) DialLocalAbstractSocket(socketName string) (*wire.Conn, error) 
 	return conn, nil
 }
 
+func (c *Device) Push(data []byte, remotePath string) error {
+	slashPath := filepath.ToSlash(remotePath)
+	if strings.HasSuffix(slashPath, "/") {
+		return fmt.Errorf("file name not set")
+	}
+
+	writer, err := c.OpenWrite(slashPath, os.ModePerm, time.Now())
+	if err != nil {
+		return wrapClientError(err, c, "Push")
+	}
+	defer writer.Close()
+	_, err = writer.Write(data)
+	time.Sleep(1 * time.Second)
+	return wrapClientError(err, c, "Push")
+}
+
 func (c *Device) PushFile(localPath, remotePath string) error {
 	file, err := os.ReadFile(localPath)
 
@@ -182,17 +198,12 @@ func (c *Device) PushFile(localPath, remotePath string) error {
 		return err
 	}
 
-	writer, err := c.OpenWrite(filepath.ToSlash(filepath.Join(remotePath, filepath.Base(localPath))), os.ModePerm, time.Now())
-
-	if err != nil {
-		return wrapClientError(err, c, "Push")
+	lastByte := remotePath[len(remotePath)-1]
+	if lastByte == '/' || lastByte == '\\' {
+		remotePath = filepath.Join(remotePath, filepath.Base(localPath))
 	}
 
-	defer writer.Close()
-
-	_, err = writer.Write(file)
-	time.Sleep(1 * time.Second)
-	return wrapClientError(err, c, "Push")
+	return c.Push(file, remotePath)
 }
 
 func (c *Device) Pull(remotePath string) ([]byte, error) {
