@@ -195,6 +195,17 @@ func (c *Device) PushFile(localPath, remotePath string) error {
 	return wrapClientError(err, c, "Push")
 }
 
+func (c *Device) Pull(remotePath string) ([]byte, error) {
+	reader, err := c.OpenRead(filepath.ToSlash(remotePath))
+	if err != nil {
+		return nil, wrapClientError(err, c, "Pull")
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+	return io.ReadAll(reader)
+}
+
 func (c *Device) PullFile(remotePath, localPath string) error {
 	reader, err := c.OpenRead(filepath.ToSlash(remotePath))
 	if err != nil {
