@@ -251,13 +251,7 @@ func (c *Device) PullFile(remotePath, localPath string) error {
 
 }
 
-func (c *Device) Install(filePath string, args ...string) error {
-	tmpPath := "/data/local/tmp/"
-	if err := c.PushFile(filePath, tmpPath); err != nil {
-		return err
-	}
-	fileName := filepath.Base(filePath)
-	apkPath := filepath.ToSlash(filepath.Join(tmpPath, fileName))
+func (c *Device) install(apkPath string, args ...string) error {
 	args = append(append([]string{"install"}, args...), apkPath)
 
 	res, err := c.RunCommand("pm", args...)
@@ -265,9 +259,29 @@ func (c *Device) Install(filePath string, args ...string) error {
 	if err != nil {
 		return err
 	}
-	slog.Info(fmt.Sprintf("[adb_install]install apk:%s", fileName), "res", res)
+	slog.Info(fmt.Sprintf("[adb_install]install apk:%s", filepath.Base(apkPath)), "res", res)
 	return nil
+}
 
+func (c *Device) Install(data []byte, apkName string, args ...string) error {
+	tmpPath := "/data/local/tmp/"
+	apkPath := filepath.ToSlash(filepath.Join(tmpPath, apkName))
+	if err := c.Push(data, apkPath); err != nil {
+		return err
+	}
+
+	return c.install(apkPath, args...)
+}
+
+func (c *Device) InstallAPK(filePath string, args ...string) error {
+	tmpPath := "/data/local/tmp/"
+	if err := c.PushFile(filePath, tmpPath); err != nil {
+		return err
+	}
+	fileName := filepath.Base(filePath)
+	apkPath := filepath.ToSlash(filepath.Join(tmpPath, fileName))
+
+	return c.install(apkPath, args...)
 }
 
 func (c *Device) Uninstall(packageName string) error {
