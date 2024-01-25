@@ -294,6 +294,84 @@ func (c *Device) Uninstall(packageName string) error {
 	return nil
 }
 
+func (c *Device) Forward(local, remote string, noRebind bool) error {
+	cmd := ""
+	serial, err := c.Serial()
+	if err != nil {
+		return err
+	}
+	if noRebind {
+		cmd = fmt.Sprintf("host-serial:%s:forward:norebind:%s;%s", serial, local, remote)
+	} else {
+		cmd = fmt.Sprintf("host-serial:%s:forward:%s;%s", serial, local, remote)
+	}
+	conn, err := c.dialDevice()
+	if err != nil {
+		return wrapClientError(err, c, "Forward")
+	}
+	defer conn.Close()
+
+	if err = conn.SendMessage([]byte(cmd)); err != nil {
+		return wrapClientError(err, c, "Forward")
+	}
+	if _, err := conn.ReadStatus(cmd); err != nil {
+		return wrapClientError(err, c, "Forward")
+	}
+	return nil
+}
+
+func (c *Device) ForwardKill(local string) error {
+	serial, err := c.Serial()
+	if err != nil {
+		return err
+	}
+	conn, err := c.dialDevice()
+	if err != nil {
+		return wrapClientError(err, c, "ForwardKill")
+	}
+	cmd := fmt.Sprintf("host-serial:%s:killforward:%s", serial, local)
+	if err = conn.SendMessage([]byte(cmd)); err != nil {
+		return wrapClientError(err, c, "ForwardKill")
+	}
+	if _, err := conn.ReadStatus(cmd); err != nil {
+		return wrapClientError(err, c, "ForwardKill")
+	}
+	return nil
+}
+
+func (c *Device) ForwardKillAll() error {
+	list, err := c.ForwardList()
+	if err != nil {
+		return err
+	}
+	var res error = nil
+	for _, info := range list {
+		err := c.ForwardKill(info.Local)
+		if err != nil {
+			res = err
+		}
+	}
+	return res
+}
+
+func (c *Device) ForwardList() ([]ForwardInfo, error) {
+	serial, err := c.Serial()
+	if err != nil {
+		return nil, err
+	}
+	conn, err := c.dialDevice()
+	if err != nil {
+		return nil, wrapClientError(err, c, "ForwardList")
+	}
+	cmd := fmt.Sprintf("host-serial:%s:list-forward", serial)
+	resp, err := conn.RoundTripSingleResponse([]byte(cmd))
+	if err != nil {
+		return nil, wrapClientError(err, c, "ForwardList")
+	}
+	forwardInfos := parseForwardInfo(resp)
+	return forwardInfos, nil
+}
+
 //Remount, from the official adb command’s docs:
 
 //	Ask adbd to remount the device's filesystem in read-write mode,

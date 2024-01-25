@@ -151,6 +151,28 @@ func (c *Adb) Connect(host string, port int) error {
 	return nil
 }
 
+func (c *Adb) ForwardList() ([]ForwardInfo, error) {
+	resp, err := roundTripSingleResponse(c.server, "host:list-forward")
+	if err != nil {
+		return nil, wrapClientError(err, c, "ForwardList")
+	}
+	forwardInfos := parseForwardInfo(resp)
+	return forwardInfos, nil
+}
+func (c *Adb) ForwardKillAll() error {
+	conn, err := c.server.Dial()
+	if err != nil {
+		return wrapClientError(err, c, "ForwardKillAll")
+	}
+	defer conn.Close()
+
+	if err = wire.SendMessageString(conn, "host:killforward-all"); err != nil {
+		return wrapClientError(err, c, "ForwardKillAll")
+	}
+
+	return nil
+}
+
 func (c *Adb) parseServerVersion(versionRaw []byte) (int, error) {
 	versionStr := string(versionRaw)
 	version, err := strconv.ParseInt(versionStr, 16, 32)
