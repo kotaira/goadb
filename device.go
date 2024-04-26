@@ -294,6 +294,34 @@ func (c *Device) Uninstall(packageName string) error {
 	return nil
 }
 
+func (c *Device) Clear(packageName string) error {
+	res, err := c.RunCommand("pm", "clear", packageName)
+
+	if err != nil {
+		return err
+	}
+	slog.Info(fmt.Sprintf("[adb_clear]clear package:%s", packageName), "res", res)
+	return nil
+}
+
+func (c *Device) GetVersionName(packageName string) (string, error) {
+	res, err := c.RunCommand("pm", "dump", packageName, "|", "grep", "versionName")
+
+	if err != nil {
+		return "", err
+	}
+
+	if res == "" {
+		return "", fmt.Errorf("versionName is empty")
+	}
+	res = strings.TrimSpace(res)
+	params := strings.Split(res, "=")
+	if len(params) < 2 {
+		return "", fmt.Errorf("versionName is empty")
+	}
+	return params[1], nil
+}
+
 func (c *Device) Forward(local, remote string, noRebind bool) error {
 	cmd := ""
 	serial, err := c.Serial()
