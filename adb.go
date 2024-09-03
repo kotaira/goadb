@@ -151,6 +151,22 @@ func (c *Adb) Connect(host string, port int) error {
 	return nil
 }
 
+func (c *Adb) DisConnect(host string, port int) error {
+	_, err := roundTripSingleResponse(c.server, fmt.Sprintf("host:disconnect:%s:%d", host, port))
+	if err != nil {
+		return wrapClientError(err, c, "Connect")
+	}
+	return nil
+}
+
+func (c *Adb) DisConnectAll() error {
+	_, err := roundTripSingleResponse(c.server, fmt.Sprintf("host:disconnect:"))
+	if err != nil {
+		return wrapClientError(err, c, "Connect")
+	}
+	return nil
+}
+
 func (c *Adb) ForwardList() ([]ForwardInfo, error) {
 	resp, err := roundTripSingleResponse(c.server, "host:list-forward")
 	if err != nil {

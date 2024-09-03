@@ -354,6 +354,7 @@ func (c *Device) ForwardKill(local string) error {
 		return err
 	}
 	conn, err := c.dialDevice()
+	defer conn.Close()
 	if err != nil {
 		return wrapClientError(err, c, "ForwardKill")
 	}
@@ -388,6 +389,7 @@ func (c *Device) ForwardList() ([]ForwardInfo, error) {
 		return nil, err
 	}
 	conn, err := c.dialDevice()
+	defer conn.Close()
 	if err != nil {
 		return nil, wrapClientError(err, c, "ForwardList")
 	}
@@ -398,6 +400,48 @@ func (c *Device) ForwardList() ([]ForwardInfo, error) {
 	}
 	forwardInfos := parseForwardInfo(resp)
 	return forwardInfos, nil
+}
+
+func (c *Device) Root() error {
+	conn, err := c.dialDevice()
+	if err != nil {
+		return wrapClientError(err, c, "Root")
+	}
+	defer conn.Close()
+
+	cmd := fmt.Sprintf("root:")
+	if err = conn.SendMessage([]byte(cmd)); err != nil {
+		return wrapClientError(err, c, "Root")
+	}
+	if _, err := conn.ReadStatus(cmd); err != nil {
+		return wrapClientError(err, c, "Root")
+	}
+	time.Sleep(3 * time.Second)
+	if msg, err := conn.ReadUntilEof(); err == nil {
+		slog.Info(string(msg))
+	}
+	return nil
+}
+
+func (c *Device) UnRoot() error {
+	conn, err := c.dialDevice()
+	if err != nil {
+		return wrapClientError(err, c, "UnRoot")
+	}
+	defer conn.Close()
+
+	cmd := fmt.Sprintf("unroot:")
+	if err = conn.SendMessage([]byte(cmd)); err != nil {
+		return wrapClientError(err, c, "UnRoot")
+	}
+	if _, err := conn.ReadStatus(cmd); err != nil {
+		return wrapClientError(err, c, "UnRoot")
+	}
+	time.Sleep(3 * time.Second)
+	if msg, err := conn.ReadUntilEof(); err == nil {
+		slog.Info(string(msg))
+	}
+	return nil
 }
 
 //Remount, from the official adb command’s docs:
