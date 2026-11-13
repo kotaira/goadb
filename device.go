@@ -129,12 +129,24 @@ func (c *Device) RunCommand(cmd string, args ...string) (string, error) {
 	return string(resp), wrapClientError(err, c, "RunCommand")
 }
 
+// OpenShell opens a persistent interactive shell. Write newline-terminated commands
+// to GetWriter and read output from GetReader; Close ends the session.
+// Directory and environment changes persist until this connection closes.
+func (c *Device) OpenShell() (*wire.Conn, error) {
+	return c.openShell("")
+}
+
+// RunCommandWithShell starts a command and returns its bidirectional stream.
 func (c *Device) RunCommandWithShell(cmd string, args ...string) (*wire.Conn, error) {
 	cmd, err := prepareCommandLine(cmd, args...)
 	if err != nil {
 		return nil, wrapClientError(err, c, "RunCommand")
 	}
 
+	return c.openShell(cmd)
+}
+
+func (c *Device) openShell(cmd string) (*wire.Conn, error) {
 	conn, err := c.dialDevice()
 	if err != nil {
 		return nil, wrapClientError(err, c, "RunCommand")
@@ -146,13 +158,15 @@ func (c *Device) RunCommandWithShell(cmd string, args ...string) (*wire.Conn, er
 	// We read until the stream is closed.
 	// So, we can't use conn.RoundTripSingleResponse.
 	if err = conn.SendMessage([]byte(req)); err != nil {
-		return nil, wrapClientError(err, c, "RunCommand")
+		_ = conn.Close()
+		return nil, wrapClientError(err, c, "OpenShell")
 	}
 	if _, err = conn.ReadStatus(req); err != nil {
-		return nil, wrapClientError(err, c, "RunCommand")
+		_ = conn.Close()
+		return nil, wrapClientError(err, c, "OpenShell")
 	}
 
-	return conn, wrapClientError(err, c, "RunCommand")
+	return conn, nil
 }
 
 func (c *Device) CreateDeviceConnection() (*wire.Conn, error) {
@@ -354,10 +368,10 @@ func (c *Device) ForwardKill(local string) error {
 		return err
 	}
 	conn, err := c.dialDevice()
-	defer conn.Close()
 	if err != nil {
 		return wrapClientError(err, c, "ForwardKill")
 	}
+	defer conn.Close()
 	cmd := fmt.Sprintf("host-serial:%s:killforward:%s", serial, local)
 	if err = conn.SendMessage([]byte(cmd)); err != nil {
 		return wrapClientError(err, c, "ForwardKill")

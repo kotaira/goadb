@@ -81,6 +81,10 @@ func (s *MockServer) GetReader() io.Reader {
 	return nil
 }
 
+func (s *MockServer) GetWriter() io.Writer {
+	return nil
+}
+
 func (s *MockServer) SendMessage(msg []byte) error {
 	s.logMethod("SendMessage")
 	if err := s.getNextErrToReturn(); err != nil {

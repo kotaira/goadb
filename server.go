@@ -26,6 +26,8 @@ type ServerConfig struct {
 	// If not specified, will use the default port on localhost.
 	Host string
 	Port int
+	// NoAutoStart leaves server lifecycle to the caller (for example, context-bounded operations).
+	NoAutoStart bool
 
 	// Dialer used to connect to the adb server.
 	Dialer
@@ -89,20 +91,23 @@ func newServer(config ServerConfig) (server, error) {
 	}, nil
 }
 
-// Dial tries to connect to the server. If the first attempt fails, tries starting the server before
-// retrying. If the second attempt fails, returns the error.
+// Dial retries after starting the server unless NoAutoStart is set.
 func (s *realServer) Dial() (*wire.Conn, error) {
 	conn, err := s.config.Dial(s.address)
-	if err != nil {
+	if err != nil && !s.config.NoAutoStart {
 		// Attempt to start the server and try again.
 		if err = s.Start(); err != nil {
 			return nil, errors.WrapErrorf(err, errors.ServerNotAvailable, "error starting server for dial")
 		}
 
 		conn, err = s.config.Dial(s.address)
-		if err != nil {
-			return nil, err
+	}
+	if err != nil {
+		// Custom dialers may return raw network errors; client methods require *errors.Err.
+		if _, ok := err.(*errors.Err); !ok {
+			err = errors.WrapErrorf(err, errors.ServerNotAvailable, "error dialing %s", s.address)
 		}
+		return nil, err
 	}
 	return conn, nil
 }
