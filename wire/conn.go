@@ -1,6 +1,6 @@
 package wire
 
-import "github.com/kotaira/goadb/internal/errors"
+import "github.com/kotaira/goadb/v2/internal/errors"
 
 const (
 	// The official implementation of adb imposes an undocumented 255-byte limit

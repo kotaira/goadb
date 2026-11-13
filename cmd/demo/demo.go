@@ -8,8 +8,8 @@ import (
 	"log"
 	"time"
 
-	adb "github.com/kotaira/goadb"
-	"github.com/kotaira/goadb/internal/errors"
+	adb "github.com/kotaira/goadb/v2"
+	"github.com/kotaira/goadb/v2/internal/errors"
 )
 
 var (

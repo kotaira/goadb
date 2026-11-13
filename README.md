@@ -42,3 +42,10 @@ exit codes aren't provided. This API doesn't configure a local terminal's raw
 mode or terminal resize events. Disconnects end the session; opening a new one
 starts with new shell state. Existing `RunCommand` and `RunCommandWithShell`
 remain available for single commands.
+
+
+## Version 2 imports
+
+Install with `go get github.com/kotaira/goadb/v2@v2.0.1` and update imports to
+`adb "github.com/kotaira/goadb/v2"` (including `/v2/wire` for direct wire users).
+Version 1 import paths continue to resolve version 1; no automatic migration occurs.

@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/kotaira/goadb/internal/errors"
+	"github.com/kotaira/goadb/v2/internal/errors"
 )
 
 // TODO(zach): All EOF errors returned from networking calls should use ConnectionResetError.

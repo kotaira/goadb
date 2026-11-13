@@ -1,6 +1,6 @@
 package adb
 
-import "github.com/kotaira/goadb/internal/errors"
+import "github.com/kotaira/goadb/v2/internal/errors"
 
 type ErrCode errors.ErrCode
 

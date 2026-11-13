@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kotaira/goadb/internal/errors"
-	"github.com/kotaira/goadb/wire"
+	"github.com/kotaira/goadb/v2/internal/errors"
+	"github.com/kotaira/goadb/v2/wire"
 )
 
 // syncFileWriter wraps a SyncConn that has requested to send a file.

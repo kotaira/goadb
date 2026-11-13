@@ -3,8 +3,8 @@ package adb
 import (
 	"io"
 
-	"github.com/kotaira/goadb/internal/errors"
-	"github.com/kotaira/goadb/wire"
+	"github.com/kotaira/goadb/v2/internal/errors"
+	"github.com/kotaira/goadb/v2/wire"
 )
 
 // syncFileReader wraps a SyncConn that has requested to receive a file.

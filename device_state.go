@@ -1,6 +1,6 @@
 package adb
 
-import "github.com/kotaira/goadb/internal/errors"
+import "github.com/kotaira/goadb/v2/internal/errors"
 
 // DeviceState represents one of the 3 possible states adb will report devices.
 // A device can be communicated with when it's in StateOnline.

@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kotaira/goadb/internal/errors"
+	"github.com/kotaira/goadb/v2/internal/errors"
 )
 
 var (

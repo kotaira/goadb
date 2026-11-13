@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kotaira/goadb/internal/errors"
-	"github.com/kotaira/goadb/wire"
+	"github.com/kotaira/goadb/v2/internal/errors"
+	"github.com/kotaira/goadb/v2/wire"
 )
 
 type shellPipeServer struct{ conn net.Conn }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/cheggaaa/pb"
-	adb "github.com/kotaira/goadb"
+	adb "github.com/kotaira/goadb/v2"
 	"io"
 	"os"
 	"path/filepath"

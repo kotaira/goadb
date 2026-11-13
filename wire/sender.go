@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kotaira/goadb/internal/errors"
+	"github.com/kotaira/goadb/v2/internal/errors"
 )
 
 // Sender sends messages to the server.

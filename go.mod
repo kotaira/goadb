@@ -1,4 +1,4 @@
-module github.com/kotaira/goadb
+module github.com/kotaira/goadb/v2
 
 go 1.21.3
 
