@@ -403,10 +403,10 @@ func (c *Device) ForwardList() ([]ForwardInfo, error) {
 		return nil, err
 	}
 	conn, err := c.dialDevice()
-	defer conn.Close()
 	if err != nil {
 		return nil, wrapClientError(err, c, "ForwardList")
 	}
+	defer conn.Close()
 	cmd := fmt.Sprintf("host-serial:%s:list-forward", serial)
 	resp, err := conn.RoundTripSingleResponse([]byte(cmd))
 	if err != nil {

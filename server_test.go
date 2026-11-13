@@ -43,6 +43,18 @@ func TestForwardKillTransportFailure(t *testing.T) {
 	}
 }
 
+func TestForwardListTransportFailure(t *testing.T) {
+	srv := &MockServer{
+		Status:   wire.StatusSuccess,
+		Messages: []string{"serial"},
+		Errs:     []error{nil, nil, nil, nil, nil, nil, errors.Errorf(errors.DeviceNotFound, "device offline")},
+	}
+	dev := (&Adb{server: srv}).Device(DeviceWithSerial("serial"))
+	if _, err := dev.ForwardList(); !HasErrCode(err, DeviceNotFound) {
+		t.Fatalf("expected device offline, got %v (trace %v)", err, srv.Trace)
+	}
+}
+
 func TestCustomDialerErrorsReachDeviceCallers(t *testing.T) {
 	cases := []struct {
 		name string
@@ -72,8 +84,18 @@ func TestCustomDialerErrorsReachDeviceCallers(t *testing.T) {
 					_, err := dev.RunCommand("am", "force-stop", "io.appium.uiautomator2.server")
 					return err
 				},
-				"state_probe":     func() error { _, err := dev.State(); return err },
-				"forward_cleanup": func() error { return dev.ForwardKill("tcp:38091") },
+				"state_probe":       func() error { _, err := dev.State(); return err },
+				"root":              func() error { return dev.Root() },
+				"unroot":            func() error { return dev.UnRoot() },
+				"shell":             func() error { _, err := dev.RunCommandWithShell("logcat"); return err },
+				"interactive_shell": func() error { _, err := dev.OpenShell(); return err },
+				"forward":           func() error { return dev.Forward("tcp:38091", "tcp:6790", false) },
+				"forward_list":      func() error { _, err := dev.ForwardList(); return err },
+				"push":              func() error { return dev.Push([]byte("data"), "/data/local/tmp/test") },
+				"pull":              func() error { _, err := dev.Pull("/data/local/tmp/test"); return err },
+				"local_socket":      func() error { _, err := dev.DialLocalAbstractSocket("scrcpy"); return err },
+				"device_info":       func() error { _, err := dev.DeviceInfo(); return err },
+				"forward_cleanup":   func() error { return dev.ForwardKill("tcp:38091") },
 			}
 			for name, call := range calls {
 				t.Run(name, func(t *testing.T) {
